@@ -36,13 +36,23 @@ export default function () {
     'response time < 500ms': (r) => r.timings.duration < 500,
     'has products array': (r) => {
       try {
-        const data = JSON.parse(r.body);
+        const bodyStr: string = r.body ? String(r.body) : "";
+        const data = JSON.parse(bodyStr);
         return Array.isArray(data);
       } catch {
         return false;
       }
     },
-    'response size < 1MB': (r) => r.body.length < 1024 * 1024,
+    'response size < 1MB': (r) => {
+      if (r.body) {
+        if (typeof r.body === "string") {
+          return r.body.length < 1024 * 1024;
+        } else if (r.body instanceof ArrayBuffer) {
+          return r.body.byteLength < 1024 * 1024;
+        }
+      }
+      return false;
+    },
   });
 
   // Record error rate
@@ -68,12 +78,12 @@ export function setup() {
 }
 
 // Teardown function - runs after the test completes
-export function teardown(data) {
+export function teardown(data: any) {
   console.log('Homepage API load test completed');
 }
 
 // Handle summary - custom summary output
-export function handleSummary(data) {
+export function handleSummary(data: any) {
   return {
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),
     'homepage-load-report.json': JSON.stringify(data, null, 2),
@@ -81,7 +91,7 @@ export function handleSummary(data) {
   };
 }
 
-function textSummary(data, options) {
+function textSummary(data: any, options: any) {
   return `
 📊 Homepage API Load Test Summary
 =====================================
@@ -105,7 +115,7 @@ Thresholds:
 `;
 }
 
-function htmlReport(data) {
+function htmlReport(data: any) {
   return `
 <!DOCTYPE html>
 <html>

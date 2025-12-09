@@ -79,7 +79,7 @@ export default function () {
       'register: status is 200 or 201': (r) => r.status === 200 || r.status === 201,
       'register: has success message': (r) => {
         try {
-          const data = JSON.parse(r.body);
+          const data = JSON.parse(r.body as string);
           return data.message && data.message.includes('registered');
         } catch {
           return false;
@@ -104,7 +104,7 @@ export default function () {
         'login: status is 200': (r) => r.status === 200,
         'login: returns token': (r) => {
           try {
-            const data = JSON.parse(r.body);
+            const data = JSON.parse(r.body as string);
             return data.token && data.user;
           } catch {
             return false;
@@ -131,7 +131,7 @@ export default function () {
       'login: returns token if successful': (r) => {
         if (r.status === 200) {
           try {
-            const data = JSON.parse(r.body);
+            const data = JSON.parse(r.body as string);
             return data.token && data.user;
           } catch {
             return false;
@@ -149,7 +149,7 @@ export default function () {
       'browse: status is 200': (r) => r.status === 200,
       'browse: returns products': (r) => {
         try {
-          const data = JSON.parse(r.body);
+          const data = JSON.parse(r.body as string);
           return Array.isArray(data);
         } catch {
           return false;
@@ -188,7 +188,7 @@ export function setup() {
 }
 
 // Handle summary
-export function handleSummary(data) {
+export function handleSummary(data: any) {
   return {
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),
     'rush-hour-report.json': JSON.stringify(data, null, 2),
@@ -196,7 +196,7 @@ export function handleSummary(data) {
   };
 }
 
-function textSummary(data, options) {
+function textSummary(data: any, options: any) {
   return `
  rush User Rush Hour Load Test Summary
 ===========================================
@@ -226,7 +226,7 @@ Thresholds:
 `;
 }
 
-function htmlReport(data) {
+function htmlReport(data: any) {
   return `
 <!DOCTYPE html>
 <html>

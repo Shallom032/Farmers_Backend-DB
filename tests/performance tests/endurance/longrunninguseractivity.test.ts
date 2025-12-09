@@ -27,7 +27,7 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:5000';
 // User session data
 let userSessions = new Map();
 
-function getOrCreateSession(vuId) {
+function getOrCreateSession(vuId: any) {
   if (!userSessions.has(vuId)) {
     userSessions.set(vuId, {
       id: vuId,
@@ -67,7 +67,8 @@ export default function () {
 
       if (loginResponse.status === 200) {
         try {
-          const data = JSON.parse(loginResponse.body);
+          const bodyStr: string = loginResponse.body ? String(loginResponse.body) : "";
+          const data = JSON.parse(bodyStr);
           session.token = data.token;
         } catch (e) {
           // Login failed, continue as anonymous
@@ -91,7 +92,8 @@ export default function () {
 
       if (registerResponse.status === 200 || registerResponse.status === 201) {
         try {
-          const data = JSON.parse(registerResponse.body);
+          const bodyStr: string = registerResponse.body ? String(registerResponse.body) : "";
+          const data = JSON.parse(bodyStr);
           session.token = data.token;
         } catch (e) {
           // Registration failed, continue as anonymous
@@ -109,7 +111,16 @@ export default function () {
 
     check(browseResponse, {
       'browse: status 200': (r) => r.status === 200,
-      'browse: has content': (r) => r.body.length > 0,
+      'browse: has content': (r) => {
+        if (r.body) {
+          if (typeof r.body === "string") {
+            return r.body.length > 0;
+          } else if (r.body instanceof ArrayBuffer) {
+            return r.body.byteLength > 0;
+          }
+        }
+        return false;
+      },
     });
 
     session.lastAction = 'browse';
@@ -201,14 +212,14 @@ export function setup() {
 }
 
 // Teardown function
-export function teardown(data) {
+export function teardown(data: any) {
   console.log('🏁 Endurance test completed');
   console.log(`Total sessions: ${userSessions.size}`);
   console.log(`Average session duration: ${Math.round(data.metrics.session_duration?.values.avg || 0)}ms`);
 }
 
 // Handle summary
-export function handleSummary(data) {
+export function handleSummary(data: any) {
   return {
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),
     'endurance-test-report.json': JSON.stringify(data, null, 2),
@@ -216,7 +227,7 @@ export function handleSummary(data) {
   };
 }
 
-function textSummary(data, options) {
+function textSummary(data: any, options: any) {
   const totalDuration = data.metrics.iteration_duration.values.count * data.metrics.iteration_duration.values.avg;
   const hours = Math.floor(totalDuration / (1000 * 60 * 60));
   const minutes = Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60));
@@ -259,7 +270,7 @@ Thresholds:
 `;
 }
 
-function htmlReport(data) {
+function htmlReport(data: any) {
   const totalDuration = data.metrics.iteration_duration.values.count * data.metrics.iteration_duration.values.avg;
   const hours = Math.floor(totalDuration / (1000 * 60 * 60));
   const minutes = Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60));

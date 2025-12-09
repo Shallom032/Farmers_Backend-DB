@@ -45,13 +45,23 @@ export default function () {
       'products list: status 200': (r) => r.status === 200,
       'products list: returns array': (r) => {
         try {
-          const data = JSON.parse(r.body);
+          const bodyStr: string = r.body ? String(r.body) : "";
+          const data = JSON.parse(bodyStr);
           return Array.isArray(data);
         } catch {
           return false;
         }
       },
-      'products list: reasonable size': (r) => r.body.length < 5 * 1024 * 1024, // < 5MB
+      'products list: reasonable size': (r) => {
+        if (r.body) {
+          if (typeof r.body === "string") {
+            return r.body.length < 5 * 1024 * 1024;
+          } else if (r.body instanceof ArrayBuffer) {
+            return r.body.byteLength < 5 * 1024 * 1024;
+          }
+        }
+        return false;
+      },
     });
 
   } else if (userType < 0.7) {
@@ -67,7 +77,8 @@ export default function () {
       'product search: status 200': (r) => r.status === 200,
       'product search: returns results': (r) => {
         try {
-          const data = JSON.parse(r.body);
+          const bodyStr: string = r.body ? String(r.body) : "";
+          const data = JSON.parse(bodyStr);
           return Array.isArray(data);
         } catch {
           return false;
@@ -92,7 +103,8 @@ export default function () {
         'order history: status 200': (r) => r.status === 200,
         'order history: returns orders': (r) => {
           try {
-            const data = JSON.parse(r.body);
+            const bodyStr: string = r.body ? String(r.body) : "";
+            const data = JSON.parse(bodyStr);
             return Array.isArray(data);
           } catch {
             return false;
@@ -109,7 +121,8 @@ export default function () {
         'farmer products: status 200': (r) => r.status === 200,
         'farmer products: returns products': (r) => {
           try {
-            const data = JSON.parse(r.body);
+            const bodyStr: string = r.body ? String(r.body) : "";
+            const data = JSON.parse(bodyStr);
             return Array.isArray(data);
           } catch {
             return false;
@@ -137,7 +150,7 @@ export function setup() {
 }
 
 // Handle summary
-export function handleSummary(data) {
+export function handleSummary(data: any) {
   return {
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),
     'db-read-performance-report.json': JSON.stringify(data, null, 2),
@@ -145,7 +158,7 @@ export function handleSummary(data) {
   };
 }
 
-function textSummary(data, options) {
+function textSummary(data: any, options: any) {
   return `
 📖 Heavy Read Queries Performance Test Summary
 ================================================
@@ -178,7 +191,7 @@ Thresholds:
 `;
 }
 
-function htmlReport(data) {
+function htmlReport(data: any) {
   return `
 <!DOCTYPE html>
 <html>

@@ -53,7 +53,8 @@ export default function () {
     'browse: status is 200': (r) => r.status === 200,
     'browse: has products': (r) => {
       try {
-        const data = JSON.parse(r.body);
+        const bodyStr: string = r.body ? String(r.body) : "";
+        const data = JSON.parse(bodyStr);
         return Array.isArray(data) && data.length >= 0;
       } catch {
         return false;
@@ -73,7 +74,8 @@ export default function () {
       'search: status is 200': (r) => r.status === 200,
       'search: returns results': (r) => {
         try {
-          const data = JSON.parse(r.body);
+          const bodyStr: string = r.body ? String(r.body) : "";
+          const data = JSON.parse(bodyStr);
           return Array.isArray(data);
         } catch {
           return false;
@@ -91,7 +93,8 @@ export default function () {
       'filter: status is 200': (r) => r.status === 200,
       'filter: returns filtered results': (r) => {
         try {
-          const data = JSON.parse(r.body);
+          const bodyStr: string = r.body ? String(r.body) : "";
+          const data = JSON.parse(bodyStr);
           return Array.isArray(data);
         } catch {
           return false;
@@ -111,7 +114,8 @@ export default function () {
       'product: returns product data if found': (r) => {
         if (r.status === 200) {
           try {
-            const data = JSON.parse(r.body);
+            const bodyStr: string = r.body ? String(r.body) : "";
+            const data = JSON.parse(bodyStr);
             return data && typeof data === 'object' && data.product_id;
           } catch {
             return false;
@@ -149,7 +153,7 @@ export function setup() {
 }
 
 // Handle summary
-export function handleSummary(data) {
+export function handleSummary(data: any) {
   return {
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),
     'product-browse-report.json': JSON.stringify(data, null, 2),
@@ -157,7 +161,7 @@ export function handleSummary(data) {
   };
 }
 
-function textSummary(data, options) {
+function textSummary(data: any, options: any) {
   return `
 🛍️ Heavy Product Browsing Load Test Summary
 ===============================================
@@ -183,7 +187,7 @@ Thresholds:
 `;
 }
 
-function htmlReport(data) {
+function htmlReport(data: any) {
   return `
 <!DOCTYPE html>
 <html>
