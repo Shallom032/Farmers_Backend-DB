@@ -70,25 +70,35 @@ export const authService = {
       if (data.role === "logistics") await authRepository.createLogisticsProfile(newUser.user_id);
     }
 
-    // For development, auto-verify the user
-    await authRepository.updateUser(newUser.user_id, { is_verified: 1 });
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Generate JWT token for auto-login
-    const jwtToken = jwt.sign(
-      { user_id: newUser.user_id, role: newUser.role },
-      config.jwtSecret,
-      { expiresIn: "1h" }
-    );
+    // Save verification token
+    await authRepository.saveVerificationToken(newUser.user_id, verificationToken);
+
+    // Send verification email asynchronously (don't wait for completion)
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+
+    // Send email in background without blocking registration
+    sendEmail(
+      newUser.email,
+      'Verify Your Email - Afri Tech AgroSolution',
+      `Welcome to Afri Tech AgroSolution!\n\nPlease verify your email by clicking the link below:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create this account, please ignore this email.`
+    ).catch(emailError => {
+      console.log('Email sending failed, but user registered successfully. Verification URL:', verificationUrl);
+      // Email failed, but registration already succeeded
+    });
 
     return {
-      message: "User registered successfully",
-      token: jwtToken,
+      message: "User registered successfully. Please check your email to verify your account.",
       user: {
         user_id: newUser.user_id,
         full_name: newUser.full_name,
         email: newUser.email,
         role: newUser.role
-      }
+      },
+      verificationUrl: verificationUrl,
+      note: "Use the verification URL above to verify your account."
     };
   },
 
@@ -102,7 +112,7 @@ export const authService = {
     const user = await authRepository.getByEmail(email.trim());
     if (!user) throw new Error("Invalid credentials");
 
-    // Temporarily disable verification for development
+    // Temporarily disabled for testing due to email issues
     // if (!user.is_verified) throw new Error("Please verify your email before logging in");
 
     const valid = await bcrypt.compare(password, user.password_hash);

@@ -28,6 +28,15 @@ export const farmersRepository = {
     return result.recordset[0];
   },
 
+  getByUserId: async (userId: number) => {
+    const pool = await getPool();
+    const result = await pool
+      .request()
+      .input("user_id", userId)
+      .query("SELECT * FROM farmers WHERE user_id = @user_id");
+    return result.recordset[0];
+  },
+
   create: async (data: FarmerData) => {
     const pool = await getPool();
     const result = await pool

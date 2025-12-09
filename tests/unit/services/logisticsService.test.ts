@@ -1,114 +1,169 @@
-import { logisticsService } from "../../../src/services/logisticsServices";
-import { logisticsRepository, Logistics } from "../../../src/repository/logisticsRepository";
+import { logisticsService } from '../../../src/services/logisticsServices';
+import { logisticsRepository } from '../../../src/repository/logisticsRepository';
+import { orderService } from '../../../src/services/orderServices';
 
-jest.mock("../../../src/repository/logisticsRepository");
+// Mock dependencies
+jest.mock('../../../src/repository/logisticsRepository');
+jest.mock('../../../src/services/orderServices');
 
-// Loosen types for Jest mocks
-const mockedRepo = logisticsRepository as unknown as {
-  getAllLogistics: jest.Mock;
-  getLogisticsById: jest.Mock;
-  createLogistics: jest.Mock;
-  updateLogistics: jest.Mock;
-  deleteLogistics: jest.Mock;
-};
+const mockLogisticsRepository = logisticsRepository as jest.Mocked<typeof logisticsRepository>;
+const mockOrderService = orderService as jest.Mocked<typeof orderService>;
 
-describe("logisticsService", () => {
-  const sampleLogistics: Logistics = {
-    logistics_id: 1,
-    order_id: 10,
-    driver_name: "John Doe",
-    status: "pending",
-    truck_number: "ABC123",
-    delivery_date:new Date("2025-10-11"),
-  };
-
+describe('LogisticsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  // -------------------------------
-  // getAllLogistics
-  // -------------------------------
-  test("getAllLogistics should return all logistics records", async () => {
-    mockedRepo.getAllLogistics.mockResolvedValue([sampleLogistics]);
+  describe('getAllLogistics', () => {
+    it('should return all logistics', async () => {
+      const mockLogistics = [{ id: 1 }, { id: 2 }];
+      mockLogisticsRepository.getAll.mockResolvedValue(mockLogistics as any);
 
-    const result = await logisticsService.getAllLogistics();
+      const result = await logisticsService.getAllLogistics();
 
-    expect(mockedRepo.getAllLogistics).toHaveBeenCalledTimes(1);
-    expect(result).toEqual([sampleLogistics]);
+      expect(mockLogisticsRepository.getAll).toHaveBeenCalled();
+      expect(result).toEqual(mockLogistics);
+    });
   });
 
-  // -------------------------------
-  // getLogisticsById
-  // -------------------------------
-  test("getLogisticsById should return a record", async () => {
-    mockedRepo.getLogisticsById.mockResolvedValue(sampleLogistics);
+  describe('getLogisticsById', () => {
+    it('should return logistics when found', async () => {
+      const mockLogistics = { id: 1 };
+      mockLogisticsRepository.getById.mockResolvedValue(mockLogistics as any);
 
-    const result = await logisticsService.getLogisticsById(1);
+      const result = await logisticsService.getLogisticsById(1);
 
-    expect(mockedRepo.getLogisticsById).toHaveBeenCalledWith(1);
-    expect(result).toEqual(sampleLogistics);
+      expect(mockLogisticsRepository.getById).toHaveBeenCalledWith(1);
+      expect(result).toEqual(mockLogistics);
+    });
+
+    it('should throw error when logistics not found', async () => {
+      mockLogisticsRepository.getById.mockResolvedValue(null as any);
+
+      await expect(logisticsService.getLogisticsById(999)).rejects.toThrow('Delivery not found');
+    });
   });
 
-  // -------------------------------
-  // createLogistics
-  // -------------------------------
-  test("createLogistics should create a record", async () => {
-    mockedRepo.createLogistics.mockResolvedValue(sampleLogistics);
+  describe('createLogistics', () => {
+    it('should create logistics successfully', async () => {
+      const data = { order_id: 1 };
+      const logisticsId = 123;
+      mockLogisticsRepository.create.mockResolvedValue(logisticsId);
 
-    const result = await logisticsService.createLogistics(sampleLogistics);
+      const result = await logisticsService.createLogistics(data);
 
-    expect(mockedRepo.createLogistics).toHaveBeenCalledWith(sampleLogistics);
-    expect(result).toEqual(sampleLogistics);
+      expect(mockLogisticsRepository.create).toHaveBeenCalledWith(data);
+      expect(result).toEqual({ logisticsId, message: 'Logistics entry created successfully' });
+    });
   });
 
-  test("createLogistics should throw error if required fields missing", async () => {
-    await expect(
-      logisticsService.createLogistics({} as Logistics)
-    ).rejects.toThrow("Missing required logistics fields");
+  describe('assignOrderToAgent', () => {
+    it('should assign order to agent successfully', async () => {
+      const orderId = 1;
+      const agentId = 2;
+      const logisticsData = { delivery_date: '2023-12-01' };
+      const mockOrder = [{ status: 'confirmed', farmer_location: 'Farm', delivery_address: 'City' }];
+      const logisticsId = 123;
+
+      mockOrderService.getOrderById.mockResolvedValue(mockOrder as any);
+      mockLogisticsRepository.getByOrderId.mockResolvedValue(null as any);
+      mockLogisticsRepository.create.mockResolvedValue(logisticsId);
+      mockOrderService.updateOrderStatus.mockResolvedValue({ message: 'Updated' });
+
+      const result = await logisticsService.assignOrderToAgent(orderId, agentId, logisticsData);
+
+      expect(mockOrderService.getOrderById).toHaveBeenCalledWith(orderId);
+      expect(mockLogisticsRepository.create).toHaveBeenCalled();
+      expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(orderId, 'shipped');
+      expect(result).toEqual({ logisticsId, message: 'Order assigned to delivery agent successfully' });
+    });
+
+    it('should throw error when order not found', async () => {
+      mockOrderService.getOrderById.mockResolvedValue(null as any);
+
+      await expect(logisticsService.assignOrderToAgent(999, 2, {})).rejects.toThrow('Order not found');
+    });
+
+    it('should throw error when order not ready', async () => {
+      const mockOrder = [{ status: 'pending' }];
+      mockOrderService.getOrderById.mockResolvedValue(mockOrder as any);
+
+      await expect(logisticsService.assignOrderToAgent(1, 2, {})).rejects.toThrow('Order not ready for logistics assignment');
+    });
+
+    it('should throw error when logistics already assigned', async () => {
+      const mockOrder = [{ status: 'confirmed' }];
+      const existingLogistics = { id: 1 };
+      mockOrderService.getOrderById.mockResolvedValue(mockOrder as any);
+      mockLogisticsRepository.getByOrderId.mockResolvedValue(existingLogistics as any);
+
+      await expect(logisticsService.assignOrderToAgent(1, 2, {})).rejects.toThrow('Logistics already assigned to this order');
+    });
   });
 
-  // -------------------------------
-  // updateLogistics
-  // -------------------------------
-  test("updateLogistics should update a record", async () => {
-    mockedRepo.getLogisticsById.mockResolvedValue(sampleLogistics);
-    mockedRepo.updateLogistics.mockResolvedValue({ ...sampleLogistics, status: "delivered" });
+  describe('getDeliveriesByAgent', () => {
+    it('should return deliveries by agent', async () => {
+      const mockDeliveries = [{ id: 1 }];
+      mockLogisticsRepository.getByAgentId.mockResolvedValue(mockDeliveries as any);
 
-    const result = await logisticsService.updateLogistics(1, { ...sampleLogistics, status: "delivered" });
+      const result = await logisticsService.getDeliveriesByAgent(2);
 
-    expect(mockedRepo.getLogisticsById).toHaveBeenCalledWith(1);
-    expect(mockedRepo.updateLogistics).toHaveBeenCalledWith(1, { ...sampleLogistics, status: "delivered" });
-    expect(result).toBe("delivered");
+      expect(mockLogisticsRepository.getByAgentId).toHaveBeenCalledWith(2);
+      expect(result).toEqual(mockDeliveries);
+    });
   });
 
-  test("updateLogistics should throw error if record not found", async () => {
-    mockedRepo.getLogisticsById.mockResolvedValue(null);
+  describe('updateDeliveryStatus', () => {
+    it('should update delivery status to delivered', async () => {
+      const mockDelivery = { id: 1, order_id: 10 };
+      mockLogisticsRepository.getById.mockResolvedValue(mockDelivery as any);
+      mockLogisticsRepository.update.mockResolvedValue(undefined as any);
+      mockOrderService.updateOrderStatus.mockResolvedValue({ message: 'Updated' });
 
-    await expect(
-      logisticsService.updateLogistics(999, sampleLogistics)
-    ).rejects.toThrow("Logistics record not found");
+      const result = await logisticsService.updateDeliveryStatus(1, 'delivered', 'Delivered successfully');
+
+      expect(mockLogisticsRepository.update).toHaveBeenCalled();
+      expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(10, 'delivered');
+      expect(result).toEqual({ message: 'Delivery status updated successfully' });
+    });
+
+    it('should throw error when delivery not found', async () => {
+      mockLogisticsRepository.getById.mockResolvedValue(null as any);
+
+      await expect(logisticsService.updateDeliveryStatus(999, 'pending')).rejects.toThrow('Delivery not found');
+    });
   });
 
-  // -------------------------------
-  // deleteLogistics
-  // -------------------------------
-  test("deleteLogistics should delete a record", async () => {
-    mockedRepo.getLogisticsById.mockResolvedValue(sampleLogistics);
-    mockedRepo.deleteLogistics.mockResolvedValue(undefined);
+  describe('updateLogistics', () => {
+    it('should update logistics successfully', async () => {
+      const existing = { id: 1, pickup_location: 'Old' };
+      const updateData = { pickup_location: 'New' };
+      mockLogisticsRepository.getById.mockResolvedValue(existing as any);
+      mockLogisticsRepository.update.mockResolvedValue(undefined as any);
 
-    const result = await logisticsService.deleteLogistics(1);
+      const result = await logisticsService.updateLogistics(1, updateData);
 
-    expect(mockedRepo.getLogisticsById).toHaveBeenCalledWith(1);
-    expect(mockedRepo.deleteLogistics).toHaveBeenCalledWith(1);
-    expect(result).toBeUndefined();
+      expect(mockLogisticsRepository.update).toHaveBeenCalledWith(1, expect.objectContaining(updateData));
+      expect(result).toEqual({ message: 'Delivery updated successfully' });
+    });
   });
 
-  test("deleteLogistics should throw error if record not found", async () => {
-    mockedRepo.getLogisticsById.mockResolvedValue(null);
+  describe('deleteLogistics', () => {
+    it('should delete logistics successfully', async () => {
+      const existing = { id: 1 };
+      mockLogisticsRepository.getById.mockResolvedValue(existing as any);
+      mockLogisticsRepository.delete.mockResolvedValue(undefined as any);
 
-    await expect(logisticsService.deleteLogistics(999)).rejects.toThrow(
-      "Logistics record not found"
-    );
+      const result = await logisticsService.deleteLogistics(1);
+
+      expect(mockLogisticsRepository.delete).toHaveBeenCalledWith(1);
+      expect(result).toEqual({ message: 'Delivery deleted successfully' });
+    });
+
+    it('should throw error when logistics not found', async () => {
+      mockLogisticsRepository.getById.mockResolvedValue(null as any);
+
+      await expect(logisticsService.deleteLogistics(999)).rejects.toThrow('Delivery not found');
+    });
   });
 });

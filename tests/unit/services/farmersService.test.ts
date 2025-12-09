@@ -1,90 +1,101 @@
-// tests/unit/services/farmerService.test.ts
-import * as farmerService from "../../../src/services/farmerServices";
-import sql from "../../../src/db/config";
+import { farmerService } from '../../../src/services/farmersServices';
+import { farmersRepository } from '../../../src/repository/farmersRepository';
 
-// Mock the `sql.Request` class
-jest.mock("../../../src/db/config", () => {
-  const mRequest = {
-    input: jest.fn().mockReturnThis(),
-    query: jest.fn(),
-  };
-  return {
-    Request: jest.fn(() => mRequest),
-  };
-});
+// Mock dependencies
+jest.mock('../../../src/repository/farmersRepository');
 
-describe("Farmer Service", () => {
-  const mockRequest = new sql.Request() as jest.Mocked<any>;
+const mockFarmersRepository = farmersRepository as jest.Mocked<typeof farmersRepository>;
 
+describe('FarmerService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test("addFarmer should insert a farmer", async () => {
-    mockRequest.query.mockResolvedValueOnce({});
-    const farmer = {
-      FullName: "John Doe",
-      PhoneNumber: "1234567890",
-      Location: "Nairobi",
-      FarmName: "Doe Farms",
-    };
+  describe('getAllFarmers', () => {
+    it('should return all farmers', async () => {
+      const mockFarmers = [{ id: 1, name: 'Farmer 1' }, { id: 2, name: 'Farmer 2' }];
+      mockFarmersRepository.getAll.mockResolvedValue(mockFarmers as any);
 
-    const result = await farmerService.addFarmer(farmer);
+      const result = await farmerService.getAllFarmers();
 
-    expect(mockRequest.input).toHaveBeenCalledTimes(4);
-    expect(mockRequest.query).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO Farmers")
-    );
-    expect(result).toEqual({ message: "Farmer added successfully" });
+      expect(mockFarmersRepository.getAll).toHaveBeenCalled();
+      expect(result).toEqual(mockFarmers);
+    });
   });
 
-  test("getAllFarmers should return all farmers", async () => {
-    const recordset = [{ FarmerID: 1, FullName: "John Doe" }];
-    mockRequest.query.mockResolvedValueOnce({ recordset });
+  describe('getFarmerById', () => {
+    it('should return farmer when found', async () => {
+      const mockFarmer = { id: 1, name: 'Farmer 1', location: 'Nairobi' };
+      mockFarmersRepository.getById.mockResolvedValue(mockFarmer as any);
 
-    const result = await farmerService.getAllFarmers();
+      const result = await farmerService.getFarmerById(1);
 
-    expect(mockRequest.query).toHaveBeenCalledWith("SELECT * FROM Farmers");
-    expect(result).toEqual(recordset);
+      expect(mockFarmersRepository.getById).toHaveBeenCalledWith(1);
+      expect(result).toEqual(mockFarmer);
+    });
+
+    it('should throw error when farmer not found', async () => {
+      mockFarmersRepository.getById.mockResolvedValue(null as any);
+
+      await expect(farmerService.getFarmerById(999)).rejects.toThrow('Farmer not found');
+    });
   });
 
-  test("getFarmerById should return a single farmer", async () => {
-    const farmer = { FarmerID: 1, FullName: "John Doe" };
-    mockRequest.query.mockResolvedValueOnce({ recordset: [farmer] });
+  describe('updateFarmer', () => {
+    it('should update farmer successfully', async () => {
+      const existingFarmer = { id: 1, location: 'Old Location', product: 'Old Product' };
+      const updateData = { location: 'New Location', product: 'New Product' };
+      mockFarmersRepository.getById.mockResolvedValue(existingFarmer as any);
+      mockFarmersRepository.update.mockResolvedValue(undefined as any);
 
-    const result = await farmerService.getFarmerById(1);
+      const result = await farmerService.updateFarmer(1, updateData);
 
-    expect(mockRequest.input).toHaveBeenCalledWith("FarmerID", 1);
-    expect(result).toEqual(farmer);
+      expect(mockFarmersRepository.getById).toHaveBeenCalledWith(1);
+      expect(mockFarmersRepository.update).toHaveBeenCalledWith(1, {
+        location: 'New Location',
+        product: 'New Product'
+      });
+      expect(result).toEqual({ message: 'Farmer updated successfully' });
+    });
+
+    it('should use existing values when not provided', async () => {
+      const existingFarmer = { id: 1, location: 'Old Location', product: 'Old Product' };
+      const updateData = { location: 'New Location' };
+      mockFarmersRepository.getById.mockResolvedValue(existingFarmer as any);
+      mockFarmersRepository.update.mockResolvedValue(undefined as any);
+
+      await farmerService.updateFarmer(1, updateData);
+
+      expect(mockFarmersRepository.update).toHaveBeenCalledWith(1, {
+        location: 'New Location',
+        product: 'Old Product'
+      });
+    });
+
+    it('should throw error when farmer not found', async () => {
+      mockFarmersRepository.getById.mockResolvedValue(null as any);
+
+      await expect(farmerService.updateFarmer(999, {})).rejects.toThrow('Farmer not found');
+    });
   });
 
-  test("updateFarmer should update a farmer", async () => {
-    mockRequest.query.mockResolvedValueOnce({});
-    const farmer = {
-      FullName: "Jane Doe",
-      PhoneNumber: "9876543210",
-      Location: "Kisumu",
-      FarmName: "Jane Farms",
-    };
+  describe('deleteFarmer', () => {
+    it('should delete farmer successfully', async () => {
+      const existingFarmer = { id: 1, name: 'Farmer 1' };
+      mockFarmersRepository.getById.mockResolvedValue(existingFarmer as any);
+      mockFarmersRepository.delete.mockResolvedValue(undefined as any);
 
-    const result = await farmerService.updateFarmer(1, farmer);
+      const result = await farmerService.deleteFarmer(1);
 
-    expect(mockRequest.input).toHaveBeenCalledWith("FarmerID", 1);
-    expect(mockRequest.query).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE Farmers")
-    );
-    expect(result).toEqual({ message: "Farmer updated successfully" });
-  });
+      expect(mockFarmersRepository.getById).toHaveBeenCalledWith(1);
+      expect(mockFarmersRepository.delete).toHaveBeenCalledWith(1);
+      expect(result).toEqual({ message: 'Farmer deleted successfully' });
+    });
 
-  test("deleteFarmer should delete a farmer", async () => {
-    mockRequest.query.mockResolvedValueOnce({});
+    it('should throw error when farmer not found', async () => {
+      mockFarmersRepository.getById.mockResolvedValue(null as any);
 
-    const result = await farmerService.deleteFarmer(1);
-
-    expect(mockRequest.input).toHaveBeenCalledWith("FarmerID", 1);
-    expect(mockRequest.query).toHaveBeenCalledWith(
-      "DELETE FROM Farmers WHERE FarmerID = @FarmerID"
-    );
-    expect(result).toEqual({ message: "Farmer deleted successfully" });
+      await expect(farmerService.deleteFarmer(999)).rejects.toThrow('Farmer not found');
+    });
   });
 });

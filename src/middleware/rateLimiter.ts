@@ -2,8 +2,8 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import { Request, Response, NextFunction } from "express";
 
 const rateLimiter = new RateLimiterMemory({
-    points: 10,   // 10 requests
-    duration: 60, // per 60 seconds
+    points: 1000,   // 1000 requests
+    duration: 60,   // per 60 seconds
 });
 
 export const rateLimiterMiddleware = async (req: Request, res: Response, next: NextFunction) => {

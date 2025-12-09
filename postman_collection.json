@@ -1,0 +1,813 @@
+{
+  "info": {
+    "name": "Afri Tech AgroSolution API",
+    "description": "Complete API documentation for the agricultural marketplace platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Farmer\",\n  \"email\": \"john.farmer@example.com\",\n  \"password\": \"password123\",\n  \"confirmPassword\": \"password123\",\n  \"location\": \"Nairobi, Kenya\",\n  \"role\": \"farmer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user (farmer, buyer, logistics, or admin)"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', response.token);",
+                  "    console.log('Token saved:', response.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.farmer@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login user and automatically save auth token"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Get current authenticated user's profile"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Get all available products (public endpoint)"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/search?q=onions&category=vegetables",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "onions"
+                },
+                {
+                  "key": "category",
+                  "value": "vegetables"
+                }
+              ]
+            },
+            "description": "Search products by name, description, or category"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1"]
+            },
+            "description": "Get specific product details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product (Farmer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fresh Onions\",\n  \"description\": \"Premium quality red onions from local farms\",\n  \"price\": 120.00,\n  \"stock_quantity\": 500,\n  \"quantity_unit\": \"kg\",\n  \"category\": \"vegetables\",\n  \"image_url\": \"/uploads/products/onions.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Create a new product (requires farmer authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Products (Farmer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "my"]
+            },
+            "description": "Get products created by current farmer"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product (Farmer)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 130.00,\n  \"stock_quantity\": 450\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1"]
+            },
+            "description": "Update product details (farmer can only update their own products)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product (Farmer)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1"]
+            },
+            "description": "Soft delete product (requires farmer authentication)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart Management",
+      "item": [
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 22,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Add a product to the buyer's cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cart Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Get all items in the buyer's cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 22,\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Update the quantity of a cart item"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Item from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/22",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart", "22"]
+            },
+            "description": "Remove a specific product from cart (replace 22 with actual product_id)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cart Total",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/total",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart", "total"]
+            },
+            "description": "Get the total price of all items in cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Entire Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Remove all items from the cart"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Upload",
+      "item": [
+        {
+          "name": "Upload Product Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/product-image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "product-image"]
+            },
+            "description": "Upload product image (returns image URL for use in product creation)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/product-image/filename.jpg",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "product-image", "filename.jpg"]
+            },
+            "description": "Delete uploaded product image"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order (Buyer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyer_id\": 1,\n  \"farmer_id\": 2,\n  \"total_amount\": 500.00,\n  \"delivery_address\": \"123 Main St, Nairobi\",\n  \"delivery_city\": \"Nairobi\",\n  \"delivery_phone\": \"+254712345678\",\n  \"notes\": \"Handle with care\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 5,\n      \"unit_price\": 100.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Create new order with items"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Get all orders (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/my/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "my", "orders"]
+            },
+            "description": "Get orders for current user (buyer/farmer)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1"]
+            },
+            "description": "Get specific order details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1", "status"]
+            },
+            "description": "Update order status (admin/farmer)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders for Logistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/logistics/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "logistics", "pending"]
+            },
+            "description": "Get orders ready for logistics assignment"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"amount\": 500.00,\n  \"payment_method\": \"mpesa\",\n  \"transaction_id\": \"TXN123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments"]
+            },
+            "description": "Create payment for order"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Payments (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments"]
+            },
+            "description": "Get all payments (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "1"]
+            },
+            "description": "Get specific payment details"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payments by Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/order/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "order", "1"]
+            },
+            "description": "Get all payments for specific order"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Payment (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/1/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "1", "approve"]
+            },
+            "description": "Approve payment (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Payment (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/1/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "1", "reject"]
+            },
+            "description": "Reject payment (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Payments (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/pending/approvals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "pending", "approvals"]
+            },
+            "description": "Get payments pending approval (admin only)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users (Admin)",
+      "item": [
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Get all users (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Get specific user details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"phone\": \"+254712345678\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Update user information"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Delete user (admin only)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

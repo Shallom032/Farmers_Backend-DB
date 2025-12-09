@@ -21,6 +21,49 @@ export const logisticsController = {
     }
   },
 
+  createLogistics: async (req: Request, res: Response) => {
+    try {
+      const result = await logisticsService.createLogistics(req.body);
+      res.status(201).json(result);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
+
+  assignOrderToAgent: async (req: Request, res: Response) => {
+    try {
+      const result = await logisticsService.assignOrderToAgent(req.body.order_id, req.body.delivery_agent_id, req.body);
+      res.status(201).json(result);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
+
+  getMyDeliveries: async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      console.log('Get deliveries for user:', user);
+      if (user.role !== 'logistics') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      const deliveries = await logisticsService.getDeliveriesByAgent(user.user_id);
+      console.log('Found deliveries:', deliveries);
+      res.json(deliveries);
+    } catch (err: any) {
+      console.error('Error getting deliveries:', err);
+      res.status(500).json({ message: err.message });
+    }
+  },
+
+  updateDeliveryStatus: async (req: Request, res: Response) => {
+    try {
+      const result = await logisticsService.updateDeliveryStatus(+req.params.id, req.body.status, req.body.notes);
+      res.json(result);
+    } catch (err: any) {
+      res.status(404).json({ message: err.message });
+    }
+  },
+
   updateLogistics: async (req: Request, res: Response) => {
     try {
       const result = await logisticsService.updateLogistics(+req.params.id, req.body);

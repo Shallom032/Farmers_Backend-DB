@@ -5,9 +5,9 @@
 
 -- Create database if it doesn't exist
 IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'Afri_Tech_AgroSolution')
-BEGIN
-    CREATE DATABASE [Afri_Tech_AgroSolution];
+BEGINATE DATABASE [Afri_Tech_AgroSolution];
 END
+    CRE
 GO
 
 USE [Afri_Tech_AgroSolution];
@@ -314,4 +314,11 @@ PRINT 'Sample data inserted for testing.';
 PRINT 'You can now add products through the dashboard.';
 
 
-select* from users where user_id=8
+select * from 
+
+ALTER TABLE logistics ADD updated_at DATETIME DEFAULT GETDATE();
+
+
+
+select* 
+from users

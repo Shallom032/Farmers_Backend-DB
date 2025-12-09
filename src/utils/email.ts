@@ -4,39 +4,27 @@ import nodemailer from "nodemailer";
 let transporter: nodemailer.Transporter;
 
 async function createTransporter() {
-  if (process.env.NODE_ENV === 'production') {
-    // Use real SMTP in production
-    transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-  } else {
-    // Use Ethereal for development
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-    console.log('Ethereal email account:', testAccount);
-  }
+  console.log('FORCED: Using Ethereal for testing');
+  // Force Ethereal for testing
+  transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: 'sbxdk7ghgetgrs2h@ethereal.email',
+      pass: 'nZCFm5dTsbmqETXNDY',
+    },
+  });
+  console.log('Using hardcoded Ethereal credentials');
 }
 
 createTransporter();
 
 export const sendEmail = async (to: string, subject: string, text: string) => {
   try {
+    console.log('Sending email with transporter:', transporter.options);
     await transporter.sendMail({
-      from: `"Agri System" <${process.env.EMAIL_USER}>`,
+      from: `"Agri System" <brzg2wru5wcefcyl@ethereal.email>`,
       to,
       subject,
       text,
